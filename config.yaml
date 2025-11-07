@@ -4,7 +4,7 @@
 api_keys:
   # Google Gemini API Key - FREE TIER AVAILABLE!
   # Get yours at: https://aistudio.google.com/app/apikey
-  google: ""
+  google: "AIzaSyBcFoIvW7i7T87GTaQdpGXFm2FPpdpO9RU"
 
 # Model Configuration for Each Agent
 # FORMAT: "google:model-name"
@@ -18,12 +18,23 @@ api_keys:
 models:
   tester_agent: "google:gemini-2.5-flash"    
   brute_agent: "google:gemini-2.5-flash"     
-  optimal_agent: "google:gemini-2.5-flash"   
+  optimal_agent: "google:gemini-2.5-flash"
+  web_search_agent: "google:gemini-2.5-flash"   # Optional: Used for searching algorithm approaches   
 
 # Execution Parameters
 execution:
   max_optimal_attempts: 5
   timeout_seconds: 30  # Timeout for code execution
+  num_brute_candidates: 3  # Number of brute force solution candidates to generate and test
+
+# Model Selection - Choose models based on problem difficulty
+model_selection:
+  strategy: "static"  # Options: "static", "adaptive" (future feature)
+  difficulty_models:
+    Easy: "google:gemini-2.5-flash"
+    Medium: "google:gemini-2.5-flash"
+    Hard: "google:gemini-2.5-pro"
+    Competition: "google:gemini-2.5-pro"
 
 # Output Configuration
 output:

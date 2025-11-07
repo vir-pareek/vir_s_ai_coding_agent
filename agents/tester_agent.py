@@ -29,15 +29,16 @@ Guidelines:
 - Each test case should be separated by a blank line if multiple cases
 - DO NOT wrap output in ``` markers or any other formatting
 
-Example format for multiple test cases:
+Example format for multiple test cases (WITH T header for Hacker Cup format):
+6
 3
 1 2 3
-
 2
 5 10
-
 1
 42
+
+IMPORTANT: For Hacker Cup problems, ALWAYS start with T (number of test cases) on the first line, then T groups of test cases.
 
 CRITICAL: Output ONLY the raw test input data above, nothing else!
 """
@@ -61,5 +62,23 @@ CRITICAL: Output ONLY the raw test input data above, nothing else!
             if lines and lines[-1].startswith("```"):
                 lines = lines[:-1]
             content = "\n".join(lines).strip()
+
+        # Ensure T header is present (number of test cases)
+        # Count the number of test cases in the generated content
+        lines = content.split('\n')
+        if lines and not lines[0].strip().isdigit():
+            # No T header - add it
+            # Count test cases: each test case has 2 lines (N and S)
+            test_count = sum(1 for line in lines if line.strip() and len(line.strip()) > 0 and not line.strip()[0].isdigit()) // 2
+            if test_count == 0:
+                # Try to count differently - look for patterns
+                test_count = (len([l for l in lines if l.strip()]) + 1) // 2
+            
+            content = str(test_count) + "\n" + content
+        elif lines and lines[0].strip().isdigit():
+            # T header exists, but validate count matches content
+            first_line = lines[0].strip()
+            # This is fine, keep as is
+            pass
 
         return content

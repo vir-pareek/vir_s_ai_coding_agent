@@ -4,7 +4,7 @@
 api_keys:
   # Google Gemini API Key - FREE TIER AVAILABLE!
   # Get yours at: https://aistudio.google.com/app/apikey
-  google: "AIzaSyBcFoIvW7i7T87GTaQdpGXFm2FPpdpO9RU"
+  google: "__your api key__"
 
 # Model Configuration for Each Agent
 # FORMAT: "google:model-name"

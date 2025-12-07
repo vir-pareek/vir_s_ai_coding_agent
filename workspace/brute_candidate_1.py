@@ -1,56 +1,133 @@
 import sys
-import bisect
 
 def solve():
-    N = int(sys.stdin.readline())
-    S = sys.stdin.readline().strip()
+    """
+    Solves a single test case.
+    """
+    try:
+        line = sys.stdin.readline()
+        if not line.strip():
+            line = sys.stdin.readline()
+        if not line.strip():
+            return None
+        N = int(line)
+        S = sys.stdin.readline().strip()
+    except (IOError, ValueError):
+        return None
 
-    a_indices = []
-    b_indices = []
-    for i in range(N):
-        if S[i] == 'A':
-            a_indices.append(i)
-        else:
-            b_indices.append(i)
-
-    current_l = 0
-    current_r = N - 1
+    s_list = list(S)
+    num_zeros = s_list.count('0')
     
-    last_eater = None
+    operations = []
     
-    while True:
-        alice_made_move = False
-        bob_made_move = False
-
-        # Alice's turn
-        # Find the leftmost 'A' in the current segment S[current_l ... current_r]
-        idx_a_search = bisect.bisect_left(a_indices, current_l)
+    # A generous loop limit. For 0/1 arrays, sorting network-based
+    # approaches converge very quickly, typically in O(log N) operations.
+    # N+5 is a safe upper bound that is well within the 10N limit.
+    for _ in range(N + 5):
         
-        if idx_a_search < len(a_indices) and a_indices[idx_a_search] <= current_r:
-            # Alice can make a move
-            k_a = a_indices[idx_a_search]
-            current_l = k_a + 1
-            last_eater = "Alice"
-            alice_made_move = True
+        # Check if the string is sorted
+        is_sorted_flag = True
+        # Check the '0' part
+        for i in range(num_zeros):
+            if s_list[i] == '1':
+                is_sorted_flag = False
+                break
+        # Check the '1' part if the '0' part was okay
+        if is_sorted_flag:
+            for i in range(num_zeros, 2 * N):
+                if s_list[i] == '0':
+                    is_sorted_flag = False
+                    break
         
-        # Bob's turn
-        # Find the rightmost 'B' in the current segment S[current_l ... current_r]
-        idx_b_search = bisect.bisect_right(b_indices, current_r)
-        
-        if idx_b_search > 0 and b_indices[idx_b_search - 1] >= current_l:
-            # Bob can make a move
-            k_b = b_indices[idx_b_search - 1]
-            current_r = k_b - 1
-            last_eater = "Bob"
-            bob_made_move = True
-            
-        # If both players skipped their turn, the game ends.
-        if not alice_made_move and not bob_made_move:
+        if is_sorted_flag:
             break
+            
+        # Identify misplaced elements (using 1-based indexing)
+        # P: '1's that should be '0's
+        P = [i + 1 for i in range(num_zeros) if s_list[i] == '1']
+        # Q: '0's that should be '1's
+        Q = [i + 1 for i in range(num_zeros, 2 * N) if s_list[i] == '0']
         
-    return last_eater
+        if not P:
+            # This case should be caught by the is_sorted check above,
+            # but as a safeguard.
+            break
+            
+        k = len(P)
+        
+        # The core of the strategy: construct sets A and B to swap
+        # misplaced elements.
+        
+        # For each pair of misplaced elements (one '1', one '0'),
+        # put the smaller index into a set for A and the larger for B.
+        A_core = []
+        B_core = []
+        for i in range(k):
+            p, q = P[i], Q[i]
+            if p < q:
+                A_core.append(p)
+                B_core.append(q)
+            else:
+                A_core.append(q)
+                B_core.append(p)
 
-num_test_cases = int(sys.stdin.readline())
-for i in range(1, num_test_cases + 1):
-    result = solve()
-    sys.stdout.write(f"Case #{i}: {result}\n")
+        # Y: correctly placed elements
+        all_misplaced_indices = set(P) | set(Q)
+        Y = sorted([i + 1 for i in range(2 * N) if (i + 1) not in all_misplaced_indices])
+        
+        # We need to fill A and B to size N. We have k elements in A_core/B_core.
+        # We need to add N-k elements from Y to each.
+        num_y_to_add = N - k
+        
+        # Partition Y into two halves: smaller indices and larger indices.
+        Y_A = Y[:num_y_to_add]
+        Y_B = Y[num_y_to_add:]
+        
+        # Combine the core misplaced indices with the correctly placed ones.
+        A = sorted(A_core + Y_A)
+        B = sorted(B_core + Y_B)
+        
+        operations.append((A, B))
+        
+        # Apply the swap operation. The swaps happen simultaneously.
+        s_orig = list(s_list)
+        for i in range(N):
+            idx_a = A[i] - 1
+            idx_b = B[i] - 1
+            s_list[idx_a], s_list[idx_b] = s_orig[idx_b], s_orig[idx_a]
+
+    # Final check after the loop
+    is_sorted_final = True
+    for i in range(num_zeros):
+        if s_list[i] == '1':
+            is_sorted_final = False
+            break
+    if is_sorted_final:
+        for i in range(num_zeros, 2 * N):
+            if s_list[i] == '0':
+                is_sorted_final = False
+                break
+
+    if not is_sorted_final:
+        return "-1"
+    
+    output_lines = [str(len(operations))]
+    for A, B in operations:
+        output_lines.append(" ".join(map(str, A)))
+        output_lines.append(" ".join(map(str, B)))
+    return "\n".join(output_lines)
+
+def main():
+    try:
+        T_str = sys.stdin.readline()
+        if not T_str: return
+        T = int(T_str)
+        for i in range(1, T + 1):
+            result = solve()
+            if result is None: break
+            sys.stdout.write(f"Case #{i}: {result}\n")
+    except (IOError, ValueError):
+        return
+
+if __name__ == "__main__":
+    main()

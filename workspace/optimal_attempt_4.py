@@ -1,114 +1,111 @@
+An elegant and efficient solution in Python for the given problem.
+```python
 import sys
-from bisect import bisect_left
-
-# Segment Tree for range maximum query and point update
-class SegmentTree:
-    def __init__(self, size):
-        self.size = size
-        self.tree = [0] * (4 * size)
-
-    # Updates the value at a specific index in the segment tree.
-    # node: current node index in the tree array
-    # start, end: range covered by the current node
-    # idx: the index to update (in terms of unique_vals ranks)
-    # val: the new value to set (max with existing)
-    def update(self, node, start, end, idx, val):
-        if start == end:
-            self.tree[node] = max(self.tree[node], val)
-            return
-        
-        mid = (start + end) // 2
-        if start <= idx <= mid:
-            self.update(2 * node, start, mid, idx, val)
-        else:
-            self.update(2 * node + 1, mid + 1, end, idx, val)
-        
-        self.tree[node] = max(self.tree[2 * node], self.tree[2 * node + 1])
-
-    # Queries for the maximum value in a given range [l, r].
-    # node: current node index in the tree array
-    # start, end: range covered by the current node
-    # l, r: query range
-    def query(self, node, start, end, l, r):
-        # If query range is outside current segment or invalid
-        if r < start or end < l or l > r:
-            return 0 # Identity for max operation (no elements, max is 0)
-        
-        # If current segment is completely within query range
-        if l <= start and end <= r:
-            return self.tree[node]
-        
-        # Partially overlapping, recurse
-        mid = (start + end) // 2
-        p1 = self.query(2 * node, start, mid, l, r)
-        p2 = self.query(2 * node + 1, mid + 1, end, l, r)
-        return max(p1, p2)
 
 def solve():
-    n = int(sys.stdin.readline())
-    a = list(map(int, sys.stdin.readline().split()))
+    """
+    Solves a single test case for the Nim Sum Dim Sum problem.
+    """
+    try:
+        line1 = sys.stdin.readline()
+        if not line1: return
+        N = int(line1)
+        S = sys.stdin.readline().strip()
+    except (IOError, ValueError):
+        return
 
-    k = n // 2 # Number of elements Alex locks
+    a_indices = [i for i, char in enumerate(S) if char == 'A']
+    b_indices = [i for i, char in enumerate(S) if char == 'B']
 
-    # check(D) function: Can Hao achieve a beauty of at most D?
-    # This means: Is there a subsequence of length k such that for any two elements b_x, b_y
-    # in the subsequence (with b_x appearing before b_y), b_y - b_x <= D?
-    # This condition is equivalent to: for every element b_y in the subsequence, and every
-    # b_x that appears before it in the subsequence, b_y - b_x <= D.
-    # This implies that b_y must be at most D greater than any b_x that precedes it.
-    # This is equivalent to: for a subsequence ending at a[i], a[i] - min_val_in_subsequence <= D.
-    # We use dynamic programming with a segment tree.
-    # dp[i] = max length of such a subsequence ending at a[i].
-    # To compute dp[i], we look for max(dp[j]) for j < i such that a[j] >= a[i] - D.
-    def check(D):
-        # Coordinate compression for values in 'a'
-        # The segment tree will operate on ranks of values.
-        unique_vals = sorted(list(set(a)))
-        val_to_rank = {val: i for i, val in enumerate(unique_vals)}
+    if not a_indices:
+        print("Bob")
+        return
+    if not b_indices:
+        print("Alice")
+        return
+
+    l, r = 0, N - 1
+    a_l_ptr, a_r_ptr = 0, len(a_indices) - 1
+    b_l_ptr, b_r_ptr = 0, len(b_indices) - 1
+    
+    turn_alice = True
+    last_mover = ""
+
+    while True:
+        # Update pointers to find available pieces in the current range [l, r]
+        while a_l_ptr <= a_r_ptr and a_indices[a_l_ptr] < l:
+            a_l_ptr += 1
+        while a_l_ptr <= a_r_ptr and a_indices[a_r_ptr] > r:
+            a_r_ptr -= 1
         
-        seg_tree = SegmentTree(len(unique_vals))
-        max_len_found = 0
+        while b_l_ptr <= b_r_ptr and b_indices[b_l_ptr] < l:
+            b_l_ptr += 1
+        while b_l_ptr <= b_r_ptr and b_indices[b_r_ptr] > r:
+            b_r_ptr -= 1
 
-        for val_a_i in a:
-            rank_a_i = val_to_rank[val_a_i]
+        alice_can_move = a_l_ptr <= a_r_ptr
+        bob_can_move = b_l_ptr <= b_r_ptr
+
+        if (turn_alice and not alice_can_move) and (not turn_alice and not bob_can_move):
+             # Both players must skip consecutively
+             break
+        if not alice_can_move and not bob_can_move:
+             # Both players run out of pieces in the same turn cycle
+             break
+
+        if turn_alice:
+            if not alice_can_move:
+                turn_alice = not turn_alice
+                continue
             
-            # We need a_j >= val_a_i - D for a predecessor a_j.
-            # Find the rank corresponding to the minimum value a_j can take.
-            lower_bound_val = val_a_i - D
-            lower_bound_rank = bisect_left(unique_vals, lower_bound_val)
+            last_mover = "Alice"
             
-            # Query for max dp value in the range of ranks [lower_bound_rank, rank_a_i].
-            # This range covers all a_j values such that:
-            # 1. a_j >= lower_bound_val (i.e., a_j >= val_a_i - D)
-            # 2. a_j <= val_a_i (because rank_a_i is the upper bound for ranks, and values are sorted)
-            # The condition j < i is handled by iterating through 'a' and only updating
-            # the segment tree with dp values for elements processed so far.
-            prev_max_len = seg_tree.query(1, 0, len(unique_vals) - 1, lower_bound_rank, rank_a_i)
+            # Optimal strategy: if a winning move exists, take it.
+            # A winning move for Alice is to leave a board with no 'B's.
+            # This is possible if the rightmost 'A' is to the right of the rightmost 'B'.
+            if not bob_can_move or a_indices[a_r_ptr] > b_indices[b_r_ptr]:
+                l = a_indices[a_r_ptr] + 1
+            else:
+                # Otherwise, play conservatively to prolong the game.
+                # Alice eats the leftmost 'A' to remove the fewest other pieces.
+                l = a_indices[a_l_ptr] + 1
+        else: # Bob's turn
+            if not bob_can_move:
+                turn_alice = not turn_alice
+                continue
             
-            current_len = 1 + prev_max_len
-            seg_tree.update(1, 0, len(unique_vals) - 1, rank_a_i, current_len)
-            max_len_found = max(max_len_found, current_len)
+            last_mover = "Bob"
+
+            # Bob's winning move: leave a board with no 'A's.
+            # Possible if the leftmost 'B' is to the left of the leftmost 'A'.
+            if not alice_can_move or b_indices[b_l_ptr] < a_indices[a_l_ptr]:
+                r = b_indices[b_l_ptr] - 1
+            else:
+                # Conservative move: eat rightmost 'B'.
+                r = b_indices[b_r_ptr] - 1
         
-        return max_len_found >= k
+        if l > r:
+            break
+        
+        turn_alice = not turn_alice
+    
+    print(last_mover)
 
-    # Binary search for the minimum D
-    # The range of possible beauty values can be from -(10^9 - 1) to (10^9 - 1).
-    # A safe range for binary search is from -2*10^9 to 2*10^9.
-    low = -2 * (10**9) 
-    high = 2 * (10**9) 
-    ans = high # Initialize with a value that is definitely achievable (max possible)
+def main():
+    """
+    Main function to handle multiple test cases.
+    """
+    try:
+        T_str = sys.stdin.readline()
+        if not T_str: return
+        T = int(T_str)
+        for i in range(1, T + 1):
+            print(f"Case #{i}: ", end="")
+            solve()
+    except (IOError, ValueError):
+        return
 
-    while low <= high:
-        mid = low + (high - low) // 2
-        if check(mid):
-            ans = mid       # mid is achievable, try for a smaller D
-            high = mid - 1
-        else:
-            low = mid + 1   # mid is not achievable, need a larger D
-            
-    sys.stdout.write(str(ans) + "\n")
+if __name__ == "__main__":
+    main()
 
-# Read the number of test cases
-num_test_cases = int(sys.stdin.readline())
-for _ in range(num_test_cases):
-    solve()
+```

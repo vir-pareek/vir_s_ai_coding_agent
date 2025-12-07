@@ -39,12 +39,13 @@ def analyze_problem(problem_statement: str) -> Dict[str, any]:
     
     # Identify algorithm hints from keywords
     algorithm_keywords = {
+        'Game Theory': ['turn', 'player', 'optimal', 'win', 'lose', 'game', 'moves', 'eats', 'chooses', 'selects', 'both choose', 'last', 'final'],
         'Dynamic Programming': ['subproblem', 'overlapping', 'optimal substructure', 'memoization', 'dp', 'recursion with cache'],
         'Greedy': ['greedy', 'local optimum', 'greedy algorithm', 'best choice'],
         'Graph': ['graph', 'node', 'edge', 'bfs', 'dfs', 'traversal', 'shortest path', 'adjacency'],
         'Sorting': ['sort', 'ordered', 'ascending', 'descending', 'median'],
         'Binary Search': ['search', 'sorted array', 'binary search', 'bisect'],
-        'Two Pointers': ['two pointers', 'sliding window', 'contiguous'],
+        'Two Pointers': ['two pointers', 'sliding window', 'contiguous', 'prefix', 'suffix'],
         'Stack': ['stack', 'lifo', 'nearest', 'next greater'],
         'Queue': ['queue', 'fifo', 'bfs', 'level order'],
         'Hash Map': ['frequency', 'count', 'lookup', 'occurrence', 'unique'],
@@ -53,6 +54,7 @@ def analyze_problem(problem_statement: str) -> Dict[str, any]:
         'Tree': ['tree', 'binary tree', 'bst', 'traversal', 'node', 'leaf'],
         'String': ['string', 'substring', 'anagram', 'palindrome', 'matching'],
         'Array': ['array', 'subarray', 'contiguous', 'sequence'],
+        'Simulation': ['simulate', 'step by step', 'turns', 'moves', 'process'],
     }
     
     for algo_type, keywords in algorithm_keywords.items():
@@ -136,6 +138,18 @@ def analyze_problem(problem_statement: str) -> Dict[str, any]:
         result['algorithm_hints'] = ['Dynamic Programming', 'Two Pointers']
         result['complexity_target'] = {'time': 'O(n)', 'space': 'O(1)'}
         result['data_structures'] = ['Two Pointers', 'Array/List']
+    
+    # Detect game theory problems
+    game_keywords = ['turn', 'player', 'optimal', 'win', 'lose', 'game', 'moves', 'eats', 'chooses', 'selects', 'both choose', 'last', 'final']
+    if any(keyword in problem_lower for keyword in game_keywords):
+        if 'Game Theory' not in result['algorithm_hints']:
+            result['algorithm_hints'].insert(0, 'Game Theory')
+        if result['algorithm_type'] == 'General':
+            result['algorithm_type'] = 'Game Theory'
+        result['key_insight'] = 'This is a game theory problem. DO NOT use heuristics or count-based shortcuts - they are WRONG. SIMULATE the game turn-by-turn: precompute index lists (a_indices, b_indices), use bisect.bisect_left() to find leftmost piece for first player, bisect.bisect_right() to find rightmost piece for second player. Track boundaries [L, R] and update after each move. Continue until both skip. Return who made last move. This O(N log N) simulation is correct and acceptable. Avoid heuristics like "if countA > countB" - simulate exactly!'
+        if 'Simulation' not in result['algorithm_hints']:
+            result['algorithm_hints'].append('Simulation')
+        result['data_structures'].append('Array/List')  # Often need to track indices or state
     
     # Recommend parallel approaches based on problem analysis
     recommended_approaches = []

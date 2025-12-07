@@ -1,0 +1,64 @@
+# Multi-Agent Programming Task Solver Configuration
+
+# API Keys Configuration
+api_keys:
+  # Google Gemini API Key - FREE TIER AVAILABLE!
+  # Get yours at: https://aistudio.google.com/app/apikey
+  google: "YOUR_API_KEY_HERE"
+
+# Model Configuration for Each Agent
+# FORMAT: "google:model-name"
+#
+# Available Google Gemini Models:
+#   - "google:gemini-3-pro-preview"     # ✅ LATEST - Most advanced, best accuracy (requires paid/quota)
+#   - "google:gemini-2.5-pro"           # Previous gen (100 free requests / day)
+#   - "google:gemini-2.5-flash"         # Fast (250 free requests / day)
+#   - "google:gemini-2.5-flash-lite"    # Fastest (1000 free requests / day)
+#
+# NOTE: gemini-3-pro-preview has 0 free tier quota - requires paid plan or quota allocation
+#
+models:
+  # ✅ Using Gemini 2.5 Pro for CRITICAL agents (100 free requests/day)
+  # gemini-2.5-pro is highly capable and has free tier quota
+  # NOTE: gemini-3-pro-preview has 0 free tier quota - use gemini-2.5-pro for free tier
+  tester_agent: "google:gemini-2.5-flash"    # Flash for test generation (250 requests/day)
+  brute_agent: "google:gemini-2.5-pro"        # ✅ 2.5 PRO for brute force (100 free requests/day) - highly capable
+  optimal_agent: "google:gemini-2.5-pro"      # ✅ 2.5 PRO for optimal solutions (100 free requests/day) - highly capable
+  web_search_agent: "google:gemini-2.5-flash"   # Flash for algorithm search (250 requests/day)
+  debug_agent: "google:gemini-2.5-pro"        # ✅ 2.5 PRO for debugging (100 free requests/day) - highly capable
+  validator_agent: "google:gemini-2.5-pro"   # ✅ 2.5 PRO for validation (100 free requests/day) - highly capable
+  complexity_agent: "google:gemini-2.5-pro"  # ✅ 2.5 PRO for complexity analysis (100 free requests/day) - highly capable   
+
+# Execution Parameters - Optimized for Correctness with Pro Models
+# Note: Pro models have 100 requests/day, so we use fewer candidates
+execution:
+  max_optimal_attempts: 2  # ✅ Reduced to 2 to save Pro quota (was 3)
+  timeout_seconds: 30  # Timeout for code execution
+  num_brute_candidates: 1  # ✅ Keep at 1 to save Pro quota
+  num_optimal_candidates: 2  # ✅ Reduced to 2 solutions (both at temp 0.0) to save Pro quota
+  temperature_low: 0.0  # Zero temperature for maximum consistency and correctness
+  temperature_high: 0.0  # Zero temperature for maximum consistency and correctness
+
+# Model Selection - Choose models based on problem difficulty
+# ✅ ADAPTIVE MODE: Automatically uses Flash for easy (faster) and Pro for hard (accurate)
+model_selection:
+  strategy: "adaptive"  # Options: "static" (use config models), "adaptive" (select based on difficulty)
+  difficulty_models:
+    Easy: "google:gemini-2.5-pro"       # ✅ 2.5 PRO for correctness (100 free requests/day)
+    Medium: "google:gemini-2.5-pro"     # ✅ 2.5 PRO for correctness (100 free requests/day)
+    Hard: "google:gemini-2.5-pro"       # ✅ 2.5 PRO for correctness (100 free requests/day)
+    Competition: "google:gemini-2.5-pro"  # ✅ 2.5 PRO for correctness (100 free requests/day)
+
+# Output Configuration
+output:
+  workspace_dir: "./workspace"
+  preserve_intermediate: true  # Keep all generated files
+
+# File Names
+files:
+  test_inputs: "input.txt"
+  brute_solution: "brute.py"
+  brute_outputs: "brute_output.txt"
+  optimal_solution: "optimal.py"
+  optimal_outputs: "output.txt"
+

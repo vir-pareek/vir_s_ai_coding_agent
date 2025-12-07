@@ -1,38 +1,129 @@
 import sys
 
-def solve():
-    n = int(sys.stdin.readline())
+def solve_case():
+    """
+    Solves a single test case.
+    """
+    try:
+        N_str = sys.stdin.readline()
+        if not N_str: return None
+        N = int(N_str)
+        S_str = sys.stdin.readline().strip()
+    except (IOError, ValueError):
+        return None
 
-    total_hao_slices = 0
-    current_slices = n
-
-    while current_slices >= 3:
-        # Hao optimally chooses m1, m2, m3 such that 1 <= m1 <= m2 <= m3
-        # and m1 + m2 + m3 = current_slices.
-        # To maximize m1 + f(m3), Hao wants to maximize m1 and minimize m3.
-        # This means m1 should be as large as possible, and m2, m3 should be as balanced as possible given m1.
-        # The optimal split is m1 = floor(current_slices / 3).
-        # The remaining slices for m2 and m3 are current_slices - m1.
-        # To minimize m3 (and maximize m1 relative to m3), m3 should be ceil(current_slices / 3).
-        #
-        # Let's verify:
-        # If current_slices = 3k: (k, k, k). Hao eats k. m3 = k.
-        # If current_slices = 3k+1: (k, k, k+1). Hao eats k. m3 = k+1.
-        # If current_slices = 3k+2: (k, k+1, k+1). Hao eats k. m3 = k+1.
-        #
-        # In all cases, Hao eats floor(current_slices / 3) slices.
-        # The slices carried over (m3) are ceil(current_slices / 3).
-
-        hao_eats_today = current_slices // 3
-        total_hao_slices += hao_eats_today
-
-        # Calculate m3 for the next day.
-        # ceil(A/B) can be computed as (A + B - 1) // B for positive A, B.
-        # Here B=3. So, m3 = (current_slices + 3 - 1) // 3 = (current_slices + 2) // 3.
-        current_slices = (current_slices + 2) // 3
+    S = list(S_str)
+    num_zeros = S.count('0')
     
-    sys.stdout.write(str(total_hao_slices) + '\n')
+    operations = []
 
-num_test_cases = int(sys.stdin.readline())
-for _ in range(num_test_cases):
-    solve()
+    # The number of operations is bounded. 10N is a generous limit.
+    # A smaller, safer limit like 2*N is sufficient in practice.
+    for _ in range(10 * N + 1):
+        
+        # Check if sorted
+        is_sorted = True
+        for i in range(num_zeros):
+            if S[i] == '1':
+                is_sorted = False
+                break
+        if is_sorted:
+            for i in range(num_zeros, 2 * N):
+                if S[i] == '0':
+                    is_sorted = False
+                    break
+        
+        if is_sorted:
+            break
+
+        # Find misplaced elements
+        P = []  # Misplaced '1's (1-indexed)
+        for i in range(num_zeros):
+            if S[i] == '1':
+                P.append(i + 1)
+
+        Q = []  # Misplaced '0's (1-indexed)
+        for i in range(num_zeros, 2 * N):
+            if S[i] == '0':
+                Q.append(i + 1)
+        
+        if not P:
+            break
+
+        k = len(P)
+        
+        A_core = []
+        B_core = []
+        
+        # Pair up misplaced 1s and 0s
+        for i in range(k):
+            p_idx = P[i]
+            q_idx = Q[i]
+            A_core.append(min(p_idx, q_idx))
+            B_core.append(max(p_idx, q_idx))
+
+        # Find correctly placed indices
+        P_set = set(P)
+        Q_set = set(Q)
+        Y = []
+        for i in range(1, 2 * N + 1):
+            if i not in P_set and i not in Q_set:
+                Y.append(i)
+        
+        # Partition Y and add to A and B sets
+        num_y_slots = N - k
+        Y_A = Y[:num_y_slots]
+        Y_B = Y[num_y_slots:]
+
+        A = sorted(A_core + Y_A)
+        B = sorted(B_core + Y_B)
+        
+        operations.append((A, B))
+
+        # Apply the parallel swap operation
+        S_old = S[:]
+        for i in range(N):
+            idx_a = A[i] - 1
+            idx_b = B[i] - 1
+            S[idx_a] = S_old[idx_b]
+            S[idx_b] = S_old[idx_a]
+
+    # Final check if sorted
+    is_final_sorted = True
+    for i in range(num_zeros):
+        if S[i] == '1':
+            is_final_sorted = False
+            break
+    if is_final_sorted:
+        for i in range(num_zeros, 2 * N):
+            if S[i] == '0':
+                is_final_sorted = False
+                break
+
+    if not is_final_sorted:
+        return "-1"
+
+    output = [str(len(operations))]
+    for A, B in operations:
+        output.append(" ".join(map(str, A)))
+        output.append(" ".join(map(str, B)))
+    return "\n".join(output)
+
+
+def main():
+    """
+    Main function to handle multiple test cases.
+    """
+    try:
+        T_str = sys.stdin.readline()
+        if not T_str: return
+        T = int(T_str)
+        for i in range(1, T + 1):
+            result = solve_case()
+            if result is None: break
+            sys.stdout.write(f"Case #{i}: {result}\n")
+    except (IOError, ValueError):
+        return
+
+if __name__ == "__main__":
+    main()
